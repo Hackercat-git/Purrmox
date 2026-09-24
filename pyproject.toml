@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "purrmox"
+dynamic = ["version"]
+description = "A lightweight, self-hosted status dashboard for Proxmox VE homelabs."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0",
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "waitress>=3.0",
+]
+
+[project.scripts]
+purrmox = "purrmox.app:main"
+purrmox-setup = "purrmox.setup:main"
+purrmox-hashpw = "purrmox.hashpw:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "purrmox.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["purrmox*"]
+
+[tool.setuptools.package-data]
+purrmox = ["templates/*.html"]
