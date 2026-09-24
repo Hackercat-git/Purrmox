@@ -1,0 +1,24 @@
+[Unit]
+Description=Purrmox - status dashboard for Proxmox VE
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=purrmox
+Group=purrmox
+WorkingDirectory=/var/lib/purrmox
+EnvironmentFile=-/etc/purrmox/purrmox.env
+ExecStart=/opt/purrmox/venv/bin/purrmox --config /etc/purrmox/config.yaml
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/purrmox
+
+[Install]
+WantedBy=multi-user.target
