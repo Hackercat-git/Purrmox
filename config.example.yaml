@@ -1,0 +1,84 @@
+# Copy this file to config.yaml and fill it in. config.yaml is ignored by git.
+# Alternatively, run `purrmox-setup` to generate a configuration interactively.
+proxmox:
+  host: "pve.example.lan"          # host name or IP address, without https://
+  port: 8006
+  token_id: "purrmox@pve!dash"     # user@realm!tokenname (read-only: PVEAuditor role)
+  token_secret: "REPLACE-WITH-THE-TOKEN-SECRET"
+  verify_ssl: false                # set to true if Proxmox has a valid certificate
+  timeout: 5
+
+listen:
+  host: "127.0.0.1"                # use "0.0.0.0" only together with the auth section below
+  port: 8080
+
+# Login (required when listening on the network). Create a hash with: purrmox-hashpw
+# auth:
+#   username: "admin"
+#   password_hash: "scrypt:..."
+
+# Services: use `url` (HTTP) or `tcp` ("host:port"). `link` sets where the card links to.
+services:
+  - name: "Example web server"
+    url: "http://192.168.1.10"
+  - name: "Example SSH"
+    tcp: "192.168.1.10:22"
+  - name: "Example with a public domain"
+    url: "http://192.168.1.20:3000"
+    link: "https://grafana.example.com"
+
+# Bookmarks shown at the top of the page (http/https only)
+links:
+  - {label: "Proxmox", url: "https://pve.example.lan:8006"}
+
+# Ports probed every minute on running VMs and containers (empty list = disabled)
+scan_ports: [22, 80, 443, 3000, 8000, 8080]
+
+# Per VM/container ID: ip, note, ports (label/scheme/url) and urls
+guests:
+  100:
+    note: "Example"
+    ports:
+      - {port: 8443, scheme: https, label: "Admin"}
+    urls:
+      - {label: "app.example.com", url: "https://app.example.com"}
+
+# Extra information per node
+nodes:
+  pve:
+    tailscale: "100.x.y.z"
+    note: "Main server"
+
+# Certificates to monitor for expiry
+# cert_checks:
+#   - {name: "My site", host: "example.com", port: 443}
+
+# Discord notifications via a bot. Provide the token through the DISCORD_BOT_TOKEN environment variable.
+discord:
+  enabled: false
+  guild_id: "YOUR-SERVER-ID"
+  channel_id: "YOUR-CHANNEL-ID"
+  # mention_user_id: "YOUR-USER-ID"   # optional: ping this user on critical alerts
+  notify_start: true
+
+alerts:
+  ram_percent: 90
+  disk_percent: 90
+  backup_max_age_hours: 48
+  cert_warn_days: 14
+  cooldown_minutes: 360
+  ignore_guests: []                   # guest IDs that should not trigger stop/start alerts
+  backup_ignore: []                   # guest IDs excluded from the backup age check
+
+# Power actions (start, shutdown, reboot). Disabled by default; requires auth and a separate write token.
+# actions:
+#   enabled: true
+#   token_id: "purrmox@pve!actions"
+#   token_secret: "..."
+#   allowed: ["start", "shutdown", "reboot"]
+#   protected_guests: [107]
+
+history:
+  retention_days: 7
+poll_seconds: 30
+refresh_seconds: 15
