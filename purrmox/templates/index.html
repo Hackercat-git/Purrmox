@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Purrmox</title>
+<style>
+  :root {
+    --bg:#0b0f14; --bg2:#111820; --card:#151d27; --card2:#1b2532; --line:#243042;
+    --text:#e8eef5; --muted:#8a99ab; --accent:#4c9aff; --violet:#a78bfa;
+    --ok:#3fb950; --warn:#e3b341; --bad:#f85149; --track:#263244;
+    --shadow:0 4px 18px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --bg:#f3f6fa; --bg2:#eaf0f7; --card:#ffffff; --card2:#f6f9fc; --line:#dbe3ee;
+    --text:#172230; --muted:#5f7086; --accent:#1f6feb; --violet:#7c5cff; --track:#e3eaf3;
+    --shadow:0 4px 14px rgba(20,40,70,.08);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:28px clamp(16px,4vw,48px) 48px; min-height:100vh; color:var(--text);
+         background:radial-gradient(1200px 500px at 10% -10%, var(--bg2), var(--bg));
+         font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .logo { width:38px; height:38px; border-radius:10px; display:grid; place-items:center; color:#fff; font-weight:700;
+          background:linear-gradient(135deg,var(--accent),#7c5cff); }
+  h1 { margin:0; font-size:21px; }
+  .sub { color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pill { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; background:var(--card);
+          border:1px solid var(--line); font-size:12.5px; color:var(--muted); }
+  .pill b { color:var(--text); font-weight:600; }
+  .btn { cursor:pointer; background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:10px;
+         padding:7px 11px; font-size:13px; text-decoration:none; }
+  .btn:hover { border-color:var(--accent); }
+  .btn.danger:hover { border-color:var(--bad); color:var(--bad); }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--bad); flex:none; display:inline-block; }
+  .dot.ok { background:var(--ok); box-shadow:0 0 0 3px rgba(63,185,80,.18); }
+  .dot.warn { background:var(--warn); }
+  .err { display:none; background:rgba(248,81,73,.12); border:1px solid rgba(248,81,73,.45); color:var(--bad);
+         padding:11px 15px; border-radius:12px; margin-bottom:18px; font-size:14px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:8px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow); }
+  .tile .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .tile .v { font-size:26px; font-weight:650; margin-top:4px; }
+  .tile .v small { font-size:13px; color:var(--muted); font-weight:500; }
+  h2 { font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; margin:28px 0 12px; font-weight:600; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+  .card .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .name { font-weight:650; font-size:16px; display:flex; align-items:center; gap:9px; }
+  .up { font-size:12px; color:var(--muted); }
+  .meter { margin-top:10px; }
+  .meter .lab { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:5px; }
+  .meter .lab b { color:var(--text); font-weight:600; }
+  .bar { height:7px; background:var(--track); border-radius:99px; overflow:hidden; }
+  .bar > span { display:block; height:100%; border-radius:99px; background:var(--ok); transition:width .6s ease; }
+  .bar > span.warn { background:var(--warn); } .bar > span.bad { background:var(--bad); }
+  .svc { display:flex; align-items:center; justify-content:space-between; padding:13px 16px; }
+  .ms { font-size:12.5px; color:var(--muted); }
+  a.cardlink { color:inherit; text-decoration:none; } a.cardlink:hover .name { color:var(--accent); }
+  .bm { display:flex; flex-wrap:wrap; gap:8px; }
+  .bm a { text-decoration:none; color:var(--text); background:var(--card); border:1px solid var(--line); padding:8px 14px;
+          border-radius:10px; font-size:13.5px; }
+  .bm a:hover { border-color:var(--accent); color:var(--accent); }
+  .spark { margin-top:12px; height:46px; }
+  .spark svg { width:100%; height:100%; display:block; }
+  .legend { display:flex; gap:12px; font-size:11px; color:var(--muted); margin-top:4px; }
+  .legend i { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+  .search, select { padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card);
+                    color:var(--text); font-size:14px; outline:none; }
+  .search { flex:1 1 220px; max-width:360px; } .search:focus, select:focus { border-color:var(--accent); }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { cursor:pointer; padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card);
+          color:var(--muted); font-size:12.5px; }
+  .chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .tablewrap { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:auto; box-shadow:var(--shadow); }
+  table { width:100%; border-collapse:collapse; min-width:1100px; }
+  th, td { text-align:left; padding:11px 14px; font-size:13.5px; white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+       border-bottom:1px solid var(--line); cursor:pointer; user-select:none; background:var(--card2); position:sticky; top:0; }
+  th.sorted::after { content:" \25B4"; } th.sorted.desc::after { content:" \25BE"; }
+  tbody tr.row { border-bottom:1px solid var(--line); cursor:pointer; }
+  tbody tr.row:hover { background:var(--card2); }
+  tr.off td { color:var(--muted); }
+  tr.detail td { background:var(--card2); white-space:normal; border-bottom:1px solid var(--line); }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; padding:6px 4px; }
+  .dgrid h4 { margin:0 0 6px; font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; font-weight:600; }
+  .dgrid .val { font-size:14px; }
+  .acts { display:flex; gap:8px; flex-wrap:wrap; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); margin-right:4px; }
+  .tag.vm { color:#c8a2ff; } .tag.ct { color:#7cc4ff; }
+  .ip { font-family:ui-monospace,Consolas,monospace; font-size:12.5px; cursor:copy; }
+  .ip:hover { color:var(--accent); }
+  .ports { display:flex; flex-wrap:wrap; gap:5px; }
+  .port { font-size:11.5px; padding:2px 8px; border-radius:6px; background:var(--card2); border:1px solid var(--line); color:var(--text);
+          text-decoration:none; font-family:ui-monospace,Consolas,monospace; }
+  a.port:hover { border-color:var(--accent); color:var(--accent); }
+  a.port.link { border-color:rgba(76,154,255,.5); color:var(--accent); }
+  .port small { color:var(--muted); font-family:system-ui,sans-serif; margin-left:4px; }
+  .port.closed { opacity:.45; text-decoration:line-through; }
+  .mini { display:flex; align-items:center; gap:8px; min-width:120px; }
+  .mini .bar { flex:1; height:6px; } .mini em { font-style:normal; font-size:12px; color:var(--muted); width:38px; text-align:right; }
+  .note { color:var(--muted); font-size:11.5px; font-weight:400; margin-left:6px; }
+  .ok-t { color:var(--ok); } .warn-t { color:var(--warn); } .bad-t { color:var(--bad); }
+  .empty { color:var(--muted); font-size:14px; padding:18px; }
+  #toast { position:fixed; right:20px; bottom:20px; background:var(--card); border:1px solid var(--line); padding:11px 16px;
+           border-radius:10px; box-shadow:var(--shadow); display:none; font-size:13.5px; max-width:340px; }
+  footer { margin-top:30px; color:var(--muted); font-size:12px; text-align:center; }
+</style>
+</head>
+<body data-refresh="{{ refresh }}">
+<header>
+  <div class="brand">
+    <div class="logo">P</div>
+    <div><h1>Purrmox</h1><div class="sub">Proxmox cluster overview</div></div>
+  </div>
+  <div class="right">
+    <span class="pill"><span class="dot" id="conn"></span><span id="connText">Connecting...</span></span>
+    <span class="pill" id="alertPill">Alerts: <b id="alertText">-</b></span>
+    <span class="pill">Updated <b id="updated">-</b></span>
+    <a class="btn" href="/api/export.md" title="Inventory as Markdown">Export MD</a>
+    <a class="btn" href="/api/export.json" title="Inventory as JSON">Export JSON</a>
+    <button class="btn" id="theme">Theme</button>
+  </div>
+</header>
+
+<div id="err" class="err"></div>
+<div class="tiles" id="tiles"></div>
+
+<div id="bmwrap" style="display:none"><h2>Bookmarks</h2><div class="bm" id="bm"></div></div>
+
+<h2>Nodes</h2>
+<div id="nodes" class="grid"></div>
+
+<h2>Services</h2>
+<div id="services" class="grid"></div>
+
+<div id="certwrap" style="display:none"><h2>Certificates</h2><div id="certs" class="grid"></div></div>
+
+<h2>Virtual machines and containers</h2>
+<div class="toolbar">
+  <input class="search" id="q" placeholder="Search by name, ID, IP, port, tag or node..." autocomplete="off">
+  <select id="tagSel"><option value="">All tags</option></select>
+  <div class="chips" id="chips"></div>
+</div>
+<div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th data-k="running"></th><th data-k="id">ID</th><th data-k="name">Name</th><th data-k="type">Type</th>
+      <th data-k="ip">IP</th><th data-k="node">Node</th><th data-k="ports">Ports and links</th>
+      <th data-k="cpu">CPU</th><th data-k="ram">RAM</th><th data-k="backupAge">Backup</th><th data-k="uptime">Uptime</th>
+    </tr></thead>
+    <tbody id="guests"></tbody>
+  </table>
+</div>
+<footer>Click a row for details. Read-only unless actions are enabled.</footer>
+<div id="toast"></div>
+
+<script>
+const REFRESH = (parseInt(document.body.dataset.refresh, 10) || 15) * 1000;
+let DATA = null, filter = "all", tagFilter = "", sortKey = "id", sortDesc = false, query = "";
+const expanded = new Set();
+const HIST = {};
+
+const gb = b => (b / 1073741824).toFixed(1);
+const pct = (a, b) => b ? Math.min(100, Math.round(a / b * 100)) : 0;
+const cls = p => p >= 90 ? "bad" : p >= 75 ? "warn" : "";
+function esc(t) { const e = document.createElement("div"); e.textContent = t == null ? "" : t; return e.innerHTML; }
+function ipNum(ip) { return ip ? ip.split(".").reduce((a, o) => a * 256 + (parseInt(o, 10) || 0), 0) : -1; }
+function uptime(s) {
+  if (!s) return "-";
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? d + "d " + h + "h" : h ? h + "h " + m + "m" : m + "m";
+}
+function age(hours) { return hours < 48 ? Math.round(hours) + "h" : Math.round(hours / 24) + "d"; }
+function meter(label, text, p) {
+  return '<div class="meter"><div class="lab"><span>' + label + '</span><b>' + text + '</b></div><div class="bar"><span class="' + cls(p) + '" style="width:' + p + '%"></span></div></div>';
+}
+function mini(p) { return '<div class="mini"><div class="bar"><span class="' + cls(p) + '" style="width:' + p + '%"></span></div><em>' + p + '%</em></div>'; }
+function toast(msg) {
+  const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 4000);
+}
+
+function spark(points) {
+  if (!points || points.length < 2) return '<div class="up">No history yet (one sample is collected every minute)</div>';
+  const W = 200, H = 44, t0 = points[0].t, t1 = points[points.length - 1].t || t0 + 1;
+  const x = p => ((p.t - t0) / Math.max(1, t1 - t0) * W).toFixed(1);
+  const y = v => (H - 2 - Math.min(100, v) / 100 * (H - 4)).toFixed(1);
+  const line = (key, color) => '<polyline fill="none" stroke="' + color + '" stroke-width="1.6" points="' + points.map(p => x(p) + "," + y(p[key])).join(" ") + '"/>';
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + line("mem", "var(--violet)") + line("cpu", "var(--accent)") + '</svg>' +
+         '<div class="legend"><span><i style="background:var(--accent)"></i>CPU</span><span><i style="background:var(--violet)"></i>RAM (24 h)</span></div>';
+}
+async function loadHist(kind, name) {
+  try {
+    const r = await fetch("/api/history?kind=" + kind + "&name=" + encodeURIComponent(name) + "&hours=24");
+    const d = await r.json();
+    HIST[kind + ":" + name] = d.points || [];
+  } catch (e) {}
+}
+async function refreshHist() {
+  if (!DATA) return;
+  await Promise.all(DATA.nodes.map(n => loadHist("node", n.name)).concat([...expanded].map(id => loadHist("guest", id))));
+  renderNodes(DATA); renderGuests(DATA);
+}
+
+function renderTiles(d) {
+  const nOn = d.nodes.filter(n => n.online).length, gOn = d.guests.filter(g => g.running).length;
+  const cpu = d.nodes.length ? (d.nodes.reduce((a, n) => a + n.cpu, 0) / d.nodes.length).toFixed(1) : "0";
+  const mu = d.nodes.reduce((a, n) => a + n.mem_used, 0), mt = d.nodes.reduce((a, n) => a + n.mem_total, 0);
+  const tile = (k, v, s) => '<div class="tile"><div class="k">' + k + '</div><div class="v">' + v + (s ? ' <small>' + s + '</small>' : '') + '</div></div>';
+  let html = tile("Nodes online", nOn, "/ " + d.nodes.length) + tile("Running", gOn, "/ " + d.guests.length) +
+             tile("Avg. CPU", cpu + "%", "") + tile("Total RAM", gb(mu), "/ " + gb(mt) + " GB");
+  if (d.backups_available) {
+    const old = d.guests.filter(g => !g.backup || (d.now - g.backup.last) / 3600 > d.backup_hours).length;
+    html += tile("Outdated backups", '<span class="' + (old ? "warn-t" : "ok-t") + '">' + old + '</span>', "/ " + d.guests.length);
+  }
+  document.getElementById("tiles").innerHTML = html;
+}
+
+function renderBookmarks(d) {
+  document.getElementById("bmwrap").style.display = d.links && d.links.length ? "block" : "none";
+  document.getElementById("bm").innerHTML = (d.links || []).map(b => '<a target="_blank" rel="noopener" href="' + esc(b.url) + '">' + esc(b.label) + '</a>').join("");
+}
+
+function renderNodes(d) {
+  document.getElementById("nodes").innerHTML = d.nodes.map(n => {
+    const ipLine = (n.ip ? 'IP <a class="port" target="_blank" rel="noopener" href="https://' + esc(n.ip) + ':8006">' + esc(n.ip) + ':8006</a> ' : "") +
+                   (n.tailscale ? 'Tailscale <span class="port">' + esc(n.tailscale) + '</span>' : "");
+    return '<div class="card"><div class="top"><div class="name"><span class="dot ' + (n.online ? "ok" : "") + '"></span>' + esc(n.name) +
+      '</div><div class="up">' + (n.cores ? n.cores + " cores · " : "") + uptime(n.uptime) + '</div></div>' +
+      (ipLine ? '<div class="up" style="margin-bottom:6px">' + ipLine + '</div>' : "") +
+      (n.note ? '<div class="up">' + esc(n.note) + '</div>' : "") +
+      meter("CPU", n.cpu + "%", Math.round(n.cpu)) +
+      meter("RAM", gb(n.mem_used) + " / " + gb(n.mem_total) + " GB", pct(n.mem_used, n.mem_total)) +
+      meter("Storage", gb(n.disk_used) + " / " + gb(n.disk_total) + " GB", pct(n.disk_used, n.disk_total)) +
+      '<div class="spark">' + spark(HIST["node:" + n.name]) + '</div></div>';
+  }).join("") || '<div class="empty">No nodes found.</div>';
+}
+
+function renderServices(d) {
+  document.getElementById("services").innerHTML = d.services.map(s => {
+    const inner = '<div class="card svc"><div class="name"><span class="dot ' + (s.ok ? "ok" : "") + '"></span>' + esc(s.name) +
+      '</div><span class="ms">' + (s.ok ? s.ms + " ms" : "offline") + '</span></div>';
+    return s.link ? '<a class="cardlink" target="_blank" rel="noopener" href="' + esc(s.link) + '">' + inner + '</a>' : inner;
+  }).join("") || '<div class="empty">No services configured (see the configuration file).</div>';
+}
+
+function renderCerts(d) {
+  document.getElementById("certwrap").style.display = d.certs && d.certs.length ? "block" : "none";
+  document.getElementById("certs").innerHTML = (d.certs || []).map(c => {
+    const state = c.days == null ? "bad" : c.days < 14 ? "warn" : "ok";
+    const text = c.days == null ? esc(c.error) : c.days + " days left";
+    return '<div class="card svc"><div class="name"><span class="dot ' + (state === "ok" ? "ok" : state) + '"></span>' + esc(c.name) +
+           '</div><span class="ms ' + state + '-t">' + text + '</span></div>';
+  }).join("");
+}
+
+function renderChips(d) {
+  const all = d.guests.length, on = d.guests.filter(g => g.running).length;
+  const defs = [["all", "All (" + all + ")"], ["on", "Running (" + on + ")"], ["off", "Stopped (" + (all - on) + ")"], ["CT", "Containers"], ["VM", "VMs"]];
+  const box = document.getElementById("chips");
+  box.innerHTML = defs.map(x => '<span class="chip ' + (filter === x[0] ? "on" : "") + '" data-f="' + x[0] + '">' + x[1] + '</span>').join("");
+  box.querySelectorAll(".chip").forEach(c => c.onclick = () => { filter = c.dataset.f; renderChips(DATA); renderGuests(DATA); });
+  const tags = [...new Set(d.guests.flatMap(g => g.tags || []))].sort();
+  const sel = document.getElementById("tagSel");
+  sel.style.display = tags.length ? "" : "none";
+  sel.innerHTML = '<option value="">All tags</option>' + tags.map(t => '<option value="' + esc(t) + '"' + (t === tagFilter ? " selected" : "") + '>' + esc(t) + '</option>').join("");
+}
+
+function portHtml(g) {
+  const chips = [];
+  (g.urls || []).forEach(u => chips.push('<a class="port link" target="_blank" rel="noopener" href="' + esc(u.url) + '">' + esc(u.label) + '</a>'));
+  if (g.ip) (g.ports || []).forEach(p => {
+    const text = p.port + (p.label ? '<small>' + esc(p.label) + '</small>' : "");
+    const closed = p.open === false ? " closed" : "";
+    const href = p.url || (p.scheme ? p.scheme + "://" + g.ip + ":" + p.port : null);
+    chips.push(href ? '<a class="port' + closed + '" target="_blank" rel="noopener" href="' + esc(href) + '">' + text + '</a>' : '<span class="port' + closed + '">' + text + '</span>');
+  });
+  return chips.length ? '<div class="ports">' + chips.join("") + '</div>' : "-";
+}
+
+function backupCell(g, d) {
+  if (!d.backups_available) return "-";
+  if (!g.backup) return '<span class="bad-t">none</span>';
+  const h = (d.now - g.backup.last) / 3600;
+  return '<span class="' + (h > d.backup_hours ? "warn-t" : "ok-t") + '">' + age(h) + '</span>';
+}
+
+function detailHtml(g, d) {
+  const dp = pct(g.disk_used, g.disk_total);
+  let acts = "";
+  if (d.actions && d.actions.length) {
+    const map = { start: "Start", shutdown: "Shut down", reboot: "Reboot" };
+    acts = '<div><h4>Actions</h4><div class="acts">' + d.actions.filter(a => a === "start" ? !g.running : g.running).map(a =>
+      '<button class="btn danger" data-act="' + a + '" data-id="' + g.id + '" data-name="' + esc(g.name) + '">' + map[a] + '</button>').join("") + '</div></div>';
+  }
+  const b = g.backup ? new Date(g.backup.last * 1000).toLocaleString() + " (" + gb(g.backup.size) + " GB)" : (d.backups_available ? "no backup found" : "unknown");
+  return '<tr class="detail"><td colspan="11"><div class="dgrid">' +
+    '<div><h4>Resources</h4><div class="val">' + (g.cores || "?") + ' cores<br>RAM ' + gb(g.mem_used) + " / " + gb(g.mem_total) + ' GB</div>' + meter("Storage", gb(g.disk_used) + " / " + gb(g.disk_total) + " GB", dp) + '</div>' +
+    '<div><h4>Tags</h4><div class="val">' + ((g.tags || []).map(t => '<span class="tag">' + esc(t) + '</span>').join("") || "-") + '</div>' +
+    (g.note ? '<h4 style="margin-top:10px">Note</h4><div class="val">' + esc(g.note) + '</div>' : "") + '</div>' +
+    '<div><h4>Last backup</h4><div class="val">' + b + '</div></div>' + acts +
+    '<div style="grid-column:1/-1"><h4>Trend (24 h)</h4><div class="spark">' + spark(HIST["guest:" + g.id]) + '</div></div>' +
+    '</div></td></tr>';
+}
+
+function renderGuests(d) {
+  let rows = d.guests.map(g => Object.assign({}, g, { ram: pct(g.mem_used, g.mem_total), ipnum: ipNum(g.ip), ports_n: (g.ports || []).length,
+    backupAge: g.backup ? (d.now - g.backup.last) : 1e12 }));
+  if (filter === "on") rows = rows.filter(g => g.running);
+  else if (filter === "off") rows = rows.filter(g => !g.running);
+  else if (filter === "CT" || filter === "VM") rows = rows.filter(g => g.type === filter);
+  if (tagFilter) rows = rows.filter(g => (g.tags || []).includes(tagFilter));
+  if (query) {
+    const q = query.toLowerCase();
+    rows = rows.filter(g => (g.name || "").toLowerCase().includes(q) || String(g.id).includes(q) || (g.node || "").toLowerCase().includes(q) ||
+      (g.ip || "").includes(q) || (g.note || "").toLowerCase().includes(q) || (g.tags || []).some(t => t.toLowerCase().includes(q)) ||
+      (g.urls || []).some(u => (u.label || "").toLowerCase().includes(q) || u.url.toLowerCase().includes(q)) ||
+      (g.ports || []).some(p => String(p.port).includes(q) || (p.label || "").toLowerCase().includes(q)));
+  }
+  const key = sortKey === "ip" ? "ipnum" : sortKey === "ports" ? "ports_n" : sortKey;
+  rows.sort((a, b) => {
+    const x = a[key], y = b[key];
+    const r = typeof x === "string" ? x.localeCompare(y) : (x > y ? 1 : x < y ? -1 : 0);
+    return sortDesc ? -r : r;
+  });
+  document.querySelectorAll("th").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.k === sortKey);
+    th.classList.toggle("desc", th.dataset.k === sortKey && sortDesc);
+  });
+  document.getElementById("guests").innerHTML = rows.map(g =>
+    '<tr class="row ' + (g.running ? "" : "off") + '" data-id="' + g.id + '"><td><span class="dot ' + (g.running ? "ok" : "") + '"></span></td>' +
+    '<td>' + g.id + '</td><td><b>' + esc(g.name) + '</b>' + (g.note ? '<span class="note">' + esc(g.note) + '</span>' : "") + '</td>' +
+    '<td><span class="tag ' + g.type.toLowerCase() + '">' + g.type + '</span></td>' +
+    '<td>' + (g.ip ? '<span class="ip" title="Click to copy" data-ip="' + esc(g.ip) + '">' + esc(g.ip) + '</span>' : "-") + '</td>' +
+    '<td>' + esc(g.node) + '</td><td>' + portHtml(g) + '</td>' +
+    '<td>' + (g.running ? mini(Math.round(g.cpu)) : "-") + '</td><td>' + (g.running ? mini(g.ram) : "-") + '</td>' +
+    '<td>' + backupCell(g, d) + '</td><td>' + uptime(g.uptime) + '</td></tr>' + (expanded.has(g.id) ? detailHtml(g, d) : "")
+  ).join("") || '<tr><td colspan="11" class="empty">Nothing found.</td></tr>';
+}
+
+function render() {
+  if (!DATA) return;
+  renderTiles(DATA); renderBookmarks(DATA); renderNodes(DATA); renderServices(DATA); renderCerts(DATA); renderChips(DATA); renderGuests(DATA);
+}
+
+async function load() {
+  const err = document.getElementById("err"), conn = document.getElementById("conn"), ct = document.getElementById("connText");
+  try {
+    const r = await fetch("/api/status");
+    if (r.status === 401) { location.reload(); return; }
+    DATA = await r.json();
+    err.style.display = DATA.error ? "block" : "none";
+    err.textContent = DATA.error || "";
+    conn.className = "dot" + (DATA.error ? "" : DATA.loading ? " warn" : " ok");
+    ct.textContent = DATA.error ? "Problem" : DATA.loading ? "Loading..." : "Connected";
+    document.getElementById("alertText").textContent = DATA.alerts_on ? "on (Discord)" : "off";
+    document.getElementById("updated").textContent = DATA.updated;
+    render();
+  } catch (e) {
+    err.style.display = "block"; err.textContent = "Purrmox server unreachable";
+    conn.className = "dot"; ct.textContent = "Offline";
+  }
+}
+
+document.getElementById("q").addEventListener("input", e => { query = e.target.value; if (DATA) renderGuests(DATA); });
+document.getElementById("tagSel").addEventListener("change", e => { tagFilter = e.target.value; if (DATA) renderGuests(DATA); });
+document.querySelectorAll("th").forEach(th => th.onclick = () => {
+  const k = th.dataset.k;
+  if (sortKey === k) sortDesc = !sortDesc; else { sortKey = k; sortDesc = false; }
+  if (DATA) renderGuests(DATA);
+});
+document.getElementById("guests").addEventListener("click", async e => {
+  const btn = e.target.closest("button[data-act]");
+  if (btn) {
+    if (!confirm("Run '" + btn.dataset.act + "' on " + btn.dataset.name + "?")) return;
+    try {
+      const r = await fetch("/api/action", { method: "POST", headers: { "Content-Type": "application/json", "X-Purrmox": "1" },
+        body: JSON.stringify({ id: parseInt(btn.dataset.id, 10), action: btn.dataset.act }) });
+      const d = await r.json();
+      toast(d.ok ? "Action sent" : "Failed: " + (d.error || r.status));
+      setTimeout(load, 3000);
+    } catch (err) { toast("Request failed"); }
+    return;
+  }
+  const ipEl = e.target.closest(".ip");
+  if (ipEl) {
+    if (navigator.clipboard) navigator.clipboard.writeText(ipEl.dataset.ip);
+    const old = ipEl.textContent; ipEl.textContent = "copied"; setTimeout(() => ipEl.textContent = old, 900);
+    return;
+  }
+  if (e.target.closest("a") || e.target.closest(".detail")) return;
+  const tr = e.target.closest("tr.row");
+  if (!tr) return;
+  const id = parseInt(tr.dataset.id, 10);
+  if (expanded.has(id)) expanded.delete(id); else { expanded.add(id); await loadHist("guest", id); }
+  renderGuests(DATA);
+});
+
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch (e) {}
+document.getElementById("theme").onclick = () => {
+  const next = root.dataset.theme === "light" ? "dark" : "light";
+  root.dataset.theme = next;
+  try { localStorage.setItem("theme", next); } catch (e) {}
+};
+
+load().then(refreshHist);
+setInterval(load, REFRESH);
+setInterval(refreshHist, 60000);
+</script>
+</body>
+</html>
