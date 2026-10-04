@@ -90,3 +90,65 @@ class Discord:
             if r.status_code >= 300:
                 self._log(f"HTTP {r.status_code} while sending (check the bot permissions in the channel)")
             return
+
+
+class Telegram:
+    """Telegram notifications via a bot. Token and chat_id from config or environment."""
+
+    def __init__(self, cfg):
+        cfg = cfg or {}
+        self.token = os.environ.get("TELEGRAM_BOT_TOKEN") or cfg.get("bot_token") or ""
+        self.chat_id = str(cfg.get("chat_id") or "")
+        self.enabled = bool(cfg.get("enabled") and self.token and self.chat_id)
+        self.q = queue.Queue()
+
+    def start(self):
+        if self.enabled:
+            threading.Thread(target=self._worker, daemon=True).start()
+
+    def send(self, title, text="", level="info", fields=None, ping=False):
+        if self.enabled:
+            self.q.put((title, text, level, fields or [], ping))
+
+    def _worker(self):
+        while True:
+            item = self.q.get()
+            try:
+                self._post(*item)
+            except Exception as e:
+                print(f"[telegram] sending failed: {e.__class__.__name__}", file=sys.stderr)
+            time.sleep(1)
+
+    def _post(self, title, text, level, fields, ping):
+        icons = {"info": "ℹ️", "ok": "✅", "warn": "⚠️", "bad": "🔴"}
+        icon = icons.get(level, "ℹ️")
+        msg = f"{icon} *{title}*"
+        if text:
+            msg += f"\n{text}"
+        if fields:
+            msg += "\n" + " · ".join(f"{k}: {v}" for k, v in fields[:5])
+        url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+        payload = {"chat_id": self.chat_id, "text": msg, "parse_mode": "Markdown"}
+        try:
+            requests.post(url, json=payload, timeout=10)
+        except requests.RequestException as e:
+            print(f"[telegram] HTTP error: {e.__class__.__name__}", file=sys.stderr)
+
+
+class MultiNotifier:
+    """Fan-out to multiple notifiers (Discord, Telegram, …)."""
+
+    def __init__(self, *notifiers):
+        self.notifiers = [n for n in notifiers if n.enabled]
+
+    def send(self, title, text="", level="info", fields=None, ping=False):
+        for n in self.notifiers:
+            n.send(title, text, level, fields, ping)
+
+    def start(self):
+        for n in self.notifiers:
+            n.start()
+
+    @property
+    def enabled(self):
+        return bool(self.notifiers)

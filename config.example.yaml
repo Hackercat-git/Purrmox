@@ -82,3 +82,9 @@ history:
   retention_days: 7
 poll_seconds: 30
 refresh_seconds: 15
+
+# Telegram notifications via a bot. Token from BotFather, chat_id from getUpdates.
+telegram:
+  enabled: false
+  bot_token: "YOUR-BOT-TOKEN"
+  chat_id: "YOUR-CHAT-ID"

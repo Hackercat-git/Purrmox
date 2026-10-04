@@ -16,7 +16,7 @@ from purrmox.exporter import to_markdown
 from purrmox.history import History
 from purrmox.links import safe_url
 from purrmox.monitor import Monitor
-from purrmox.notifier import Discord
+from purrmox.notifier import Discord, Telegram, MultiNotifier
 from purrmox.proxmox import ProxmoxClient, ProxmoxError
 from purrmox.services import ServiceChecker
 
@@ -44,7 +44,9 @@ def create_app(cfg, history_path="history.db"):
     checker = ServiceChecker(cfg.get("services"))
     certs = CertChecker(cfg.get("cert_checks"))
     history = History(path=history_path, retention_days=(cfg.get("history") or {}).get("retention_days", 7))
-    notifier = Discord(cfg.get("discord"))
+    discord = Discord(cfg.get("discord"))
+    telegram = Telegram(cfg.get("telegram"))
+    notifier = MultiNotifier(discord, telegram)
     alerts = Alerts(notifier, cfg)
     monitor = Monitor(client, discovery, checker, certs, history, alerts, poll_seconds=cfg.get("poll_seconds", 30))
 
