@@ -152,3 +152,8 @@ class MultiNotifier:
     @property
     def enabled(self):
         return bool(self.notifiers)
+
+    @property
+    def notify_start(self):
+        """Send the start message unless every active notifier has switched it off."""
+        return any(getattr(n, "notify_start", True) for n in self.notifiers)

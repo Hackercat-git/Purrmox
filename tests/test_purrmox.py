@@ -118,6 +118,13 @@ class AlertTests(unittest.TestCase):
 
 
 class NotifierTests(unittest.TestCase):
+    def test_multi_notifier_has_notify_start(self):
+        from purrmox.notifier import Discord, MultiNotifier, Telegram
+        self.assertFalse(MultiNotifier(Discord({}), Telegram({})).notify_start)
+        multi = MultiNotifier(Telegram({"enabled": True, "bot_token": "t", "chat_id": "1"}))
+        self.assertTrue(multi.enabled)
+        self.assertTrue(multi.notify_start)
+
     def test_disabled_without_token(self):
         from purrmox.notifier import Discord
         os.environ.pop("DISCORD_BOT_TOKEN", None)
