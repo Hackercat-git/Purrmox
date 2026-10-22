@@ -68,7 +68,9 @@ cat > "$PLIST" <<EOF
 EOF
 
 launchctl bootout "${DOMAIN}/${LABEL}" 2>/dev/null || true
-launchctl bootstrap "$DOMAIN" "$PLIST"
+# bootout is asynchronous; give launchd a moment before loading the service again.
+sleep 2
+launchctl bootstrap "$DOMAIN" "$PLIST" || launchctl kickstart -k "${DOMAIN}/${LABEL}"
 
 echo
 echo "Purrmox agent installed for $(id -un) on port ${PORT}."
