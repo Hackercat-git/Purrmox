@@ -88,6 +88,9 @@ available) and protects it with a shared secret; Purrmox polls it every `poll_se
 sudo ./install/agent/install-unix.sh
 ```
 
+No sudo on the Mac? `./install/agent/install-macos-user.sh` installs a per-user LaunchAgent instead (starts when you are
+logged in, and keeps local-network access).
+
 Each script prints a shared secret once. Add the machine to `config.yaml`, keeping the secret in an environment
 variable (for the container install: `/etc/purrmox/purrmox.env`):
 
