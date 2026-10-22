@@ -65,6 +65,7 @@ mkdir -p "$DIR"
 [ -x "$DIR/venv/bin/python" ] || "$PYTHON" -m venv "$DIR/venv"
 "$DIR/venv/bin/python" -m pip install --quiet --upgrade pip
 "$DIR/venv/bin/python" -m pip install --quiet --upgrade "$SOURCE"
+"$DIR/venv/bin/python" -m pip install --quiet --force-reinstall --no-deps "$SOURCE"
 
 NEW_TOKEN=""
 if [ ! -f "$DIR/token" ]; then

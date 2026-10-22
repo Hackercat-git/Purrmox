@@ -38,6 +38,7 @@ mkdir -p "$DIR" "$HOME/Library/LaunchAgents"
 [ -x "$DIR/venv/bin/python" ] || "$PYTHON" -m venv "$DIR/venv"
 "$DIR/venv/bin/python" -m pip install --quiet --disable-pip-version-check --upgrade pip
 "$DIR/venv/bin/python" -m pip install --quiet --disable-pip-version-check --upgrade "$SOURCE"
+"$DIR/venv/bin/python" -m pip install --quiet --disable-pip-version-check --force-reinstall --no-deps "$SOURCE"
 
 NEW_TOKEN=""
 if [ ! -s "$DIR/token" ]; then

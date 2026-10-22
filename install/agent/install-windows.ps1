@@ -56,6 +56,7 @@ $venvPython = Join-Path $venv "Scripts\python.exe"
 $ErrorActionPreference = "Continue"
 & $venvPython -m pip install --quiet --disable-pip-version-check --upgrade pip
 & $venvPython -m pip install --quiet --disable-pip-version-check --upgrade $Source
+& $venvPython -m pip install --quiet --disable-pip-version-check --force-reinstall --no-deps $Source
 $pipExit = $LASTEXITCODE
 $ErrorActionPreference = "Stop"
 if ($pipExit -ne 0) { throw "Installing the agent failed." }
