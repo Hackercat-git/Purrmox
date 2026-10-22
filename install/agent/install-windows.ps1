@@ -16,6 +16,7 @@
 param(
     [string]$AllowFrom = "Any",
     [int]$Port = 9100,
+    [string]$SecretFile = "",  # optional: file with a ready-made shared secret (used only on first install)
     [string]$Source = "purrmox[agent] @ https://github.com/Hackercat-git/Purrmox/archive/refs/heads/main.zip",
     [switch]$Uninstall
 )
@@ -51,16 +52,24 @@ New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 $venv = Join-Path $Dir "venv"
 if (-not (Test-Path (Join-Path $venv "Scripts\python.exe"))) { & $python -m venv $venv }
 $venvPython = Join-Path $venv "Scripts\python.exe"
-& $venvPython -m pip install --quiet --upgrade pip
-& $venvPython -m pip install --quiet --upgrade $Source
-if ($LASTEXITCODE -ne 0) { throw "Installing the agent failed." }
+# pip prints notices on stderr; PowerShell 5.1 treats those as errors under "Stop", so only the exit code counts.
+$ErrorActionPreference = "Continue"
+& $venvPython -m pip install --quiet --disable-pip-version-check --upgrade pip
+& $venvPython -m pip install --quiet --disable-pip-version-check --upgrade $Source
+$pipExit = $LASTEXITCODE
+$ErrorActionPreference = "Stop"
+if ($pipExit -ne 0) { throw "Installing the agent failed." }
 
 # Shared secret: keep an existing one so re-running the script does not break the dashboard.
 $tokenFile = Join-Path $Dir "token.txt"
 $newToken = $null
 if (-not (Test-Path $tokenFile)) {
-    $newToken = & $venvPython -c "import secrets; print(secrets.token_urlsafe(32))"
-    Set-Content -Path $tokenFile -Value $newToken -Encoding ascii -NoNewline
+    if ($SecretFile) {
+        Set-Content -Path $tokenFile -Value ((Get-Content -Raw $SecretFile).Trim()) -Encoding ascii -NoNewline
+    } else {
+        $newToken = & $venvPython -c "import secrets; print(secrets.token_urlsafe(32))"
+        Set-Content -Path $tokenFile -Value $newToken -Encoding ascii -NoNewline
+    }
 }
 # Only SYSTEM and administrators may read the token.
 & icacls $tokenFile /inheritance:r /grant:r "SYSTEM:(R)" "Administrators:(F)" | Out-Null
@@ -89,6 +98,6 @@ if ($newToken) {
     Write-Host "Shared secret (shown once, put it in the 'hosts' section of the Purrmox config.yaml):"
     Write-Host "  $newToken"
 } else {
-    Write-Host "Existing shared secret kept: $tokenFile (administrators only)."
+    Write-Host "Shared secret stored in $tokenFile (administrators only)."
 }
 Write-Host "Check: Invoke-RestMethod http://localhost:$Port/healthz"
