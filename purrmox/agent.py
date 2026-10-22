@@ -60,6 +60,22 @@ def primary_disk_path():
     return "/"
 
 
+MAC_HIDDEN_VOLUMES = ("recovery", "preboot", "vm", "update", "xarts", "iscpreboot", "hardware")
+
+
+def skip_mount(mount, disk_path, platform_name):
+    """Hide mounts that only repeat the main disk or are internal system volumes."""
+    if mount == disk_path:
+        return False
+    if mount.startswith(("/snap/", "/boot")):
+        return True
+    if platform_name == "darwin":
+        # APFS volumes share one container, so "/" and the system volumes would repeat the same capacity.
+        return mount == "/" or mount.startswith("/System/Volumes/") \
+            or (mount.startswith("/Volumes/") and mount[len("/Volumes/"):].lower() in MAC_HIDDEN_VOLUMES)
+    return False
+
+
 def local_ip():
     """Best-effort LAN address (no packets are sent by a UDP connect)."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -95,8 +111,7 @@ class Collector:
         for part in self.ps.disk_partitions(all=False):
             if "cdrom" in part.opts or part.fstype == "" or part.mountpoint in seen:
                 continue
-            if part.mountpoint.startswith(("/System/Volumes/", "/snap/", "/boot")) \
-                    and part.mountpoint != self.disk_path:
+            if skip_mount(part.mountpoint, self.disk_path, sys.platform):
                 continue
             seen.add(part.mountpoint)
             try:

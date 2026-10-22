@@ -167,6 +167,23 @@ class AgentTests(unittest.TestCase):
             self.agent.main(["--token-file", os.devnull])
 
 
+class MountFilterTests(unittest.TestCase):
+    def test_macos_hides_repeated_apfs_volumes(self):
+        from purrmox.agent import skip_mount
+        data = "/System/Volumes/Data"
+        self.assertFalse(skip_mount(data, data, "darwin"))
+        self.assertTrue(skip_mount("/", data, "darwin"))
+        self.assertTrue(skip_mount("/Volumes/Recovery", data, "darwin"))
+        self.assertTrue(skip_mount("/System/Volumes/VM", data, "darwin"))
+        self.assertFalse(skip_mount("/Volumes/Backup Drive", data, "darwin"))
+
+    def test_other_platforms_keep_mounts(self):
+        from purrmox.agent import skip_mount
+        self.assertFalse(skip_mount("/mnt/data", "/", "linux"))
+        self.assertTrue(skip_mount("/boot/efi", "/", "linux"))
+        self.assertFalse(skip_mount("D:\\", "C:\\", "win32"))
+
+
 class HostAppTests(unittest.TestCase):
     def test_hosts_in_status_history_and_export(self):
         import base64
