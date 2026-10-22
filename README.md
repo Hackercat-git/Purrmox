@@ -102,6 +102,11 @@ hosts:
 Run the agent by hand instead with `pip install "purrmox[agent]"`, set `PURRMOX_AGENT_TOKEN` (at least 16
 characters) and start `purrmox-agent --port 9100`. Use `--uninstall` (unix) or `-Uninstall` (Windows) to remove it.
 
+To update an agent, run the same install script again: it upgrades the package, keeps the existing secret and
+restarts the service. The agent version is shown on the machine's card.
+
+Each host accepts an optional `alerts: {ram_percent: 95, disk_percent: 95}` to override the global thresholds.
+
 The agent is read-only and has no commands, only metrics. Traffic is plain HTTP, so keep it on your LAN or
 Tailscale and restrict the firewall to the Purrmox server (the Windows script does this with `-AllowFrom`).
 

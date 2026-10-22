@@ -42,6 +42,11 @@ def _num(value, default=0):
     return value if isinstance(value, (int, float)) and not isinstance(value, bool) else default
 
 
+def _limit(value):
+    """A per-host alert threshold between 1 and 100 percent, or None to use the global one."""
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) and 0 < value <= 100 else None
+
+
 def _text(value, limit=120):
     return str(value)[:limit] if value is not None else None
 
@@ -93,8 +98,10 @@ class HostPoller:
             time.sleep(self.interval)
 
     def _one(self, h):
+        own = h.get("alerts") if isinstance(h.get("alerts"), dict) else {}
         base = {"id": h["id"], "name": h["name"], "note": h.get("note"), "link": safe_url(h.get("link")),
-                "online": False, "error": None, "ms": 0, "seen": None}
+                "online": False, "error": None, "ms": 0, "seen": None,
+                "ram_limit": _limit(own.get("ram_percent")), "disk_limit": _limit(own.get("disk_percent"))}
         start = time.time()
         try:
             r = requests.get(h["url"].rstrip("/") + "/metrics", timeout=self.timeout,

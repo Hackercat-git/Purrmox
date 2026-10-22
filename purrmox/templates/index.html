@@ -251,7 +251,7 @@ function renderHosts(d) {
   document.getElementById("hosts").innerHTML = hosts.map(h => {
     const seen = h.seen ? new Date(h.seen * 1000).toLocaleTimeString() : null;
     const info = [h.ip ? '<span class="port">' + esc(h.ip) + '</span>' : "", h.cores ? h.cores + " cores" : "",
-                  h.battery ? "battery " + h.battery.percent + "%" + (h.battery.plugged ? " (charging)" : "") : "",
+                  h.version ? "agent " + esc(h.version) : "", h.battery ? "battery " + h.battery.percent + "%" + (h.battery.plugged ? " (charging)" : "") : "",
                   h.temp != null ? h.temp + " °C" : ""].filter(Boolean).join(" · ");
     const disks = (h.disks && h.disks.length ? h.disks : []).map(x => meter("Disk " + esc(x.mount), gb(x.used) + " / " + gb(x.total) + " GB", pct(x.used, x.total))).join("") ||
                   (h.disk_total ? meter("Storage", gb(h.disk_used) + " / " + gb(h.disk_total) + " GB", pct(h.disk_used, h.disk_total)) : "");

@@ -88,6 +88,27 @@ class HostTests(unittest.TestCase):
             a.evaluate_hosts(host(True, mem=9.5))
         self.assertTrue(any("RAM almost full: pc" in m[0] for m in n.msgs))
 
+    def test_per_host_threshold_overrides_global(self):
+        from unittest import mock
+
+        from purrmox.hosts import HostPoller
+        ok = mock.Mock(status_code=200)
+        ok.json.return_value = {"mem_used": 8, "mem_total": 10}
+        cfg = [{"name": "big", "url": "http://x", "token": "t", "alerts": {"ram_percent": 95, "disk_percent": "x"}}]
+        poller = HostPoller(cfg)
+        with mock.patch("purrmox.hosts.requests.get", return_value=ok):
+            poller.refresh()
+        host = poller.get()[0]
+        self.assertEqual((host["ram_limit"], host["disk_limit"]), (95, None))
+        n = FakeNotifier()
+        a = Alerts(n, {"alerts": {"ram_percent": 70}})
+        for _ in range(4):
+            a.evaluate_hosts([host])
+        self.assertFalse(any("RAM" in m[0] for m in n.msgs))
+        for _ in range(4):
+            a.evaluate_hosts([dict(host, ram_limit=None)])
+        self.assertTrue(any("RAM almost full" in m[0] for m in n.msgs))
+
     def test_history_records_hosts(self):
         import tempfile
 

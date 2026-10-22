@@ -20,6 +20,23 @@ jobs:
         run: pip install ".[agent]"
       - name: Run tests
         run: python -m unittest discover -s tests -v
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install ".[agent]"
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Parse the Windows installer
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile("install/agent/install-windows.ps1", [ref]$null, [ref]$errors)
+          if ($errors) { $errors; exit 1 }
   shell:
     runs-on: ubuntu-latest
     steps:

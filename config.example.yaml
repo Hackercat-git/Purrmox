@@ -22,6 +22,10 @@ listen:
 # hosts:
 #   - {name: "Milan PC", url: "http://192.168.1.60:9100", token_env: "AGENT_TOKEN_PC", note: "Windows desktop"}
 #   - {name: "MacBook", url: "http://192.168.1.61:9100", token_env: "AGENT_TOKEN_MAC"}
+#   - name: "Big server"            # optional per-host alert thresholds override the global `alerts` section
+#     url: "http://192.168.1.62:9100"
+#     token_env: "AGENT_TOKEN_BIG"
+#     alerts: {ram_percent: 95, disk_percent: 95}
 
 # Services: use `url` (HTTP) or `tcp` ("host:port"). `link` sets where the card links to.
 services:

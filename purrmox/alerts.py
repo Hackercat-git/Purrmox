@@ -65,7 +65,9 @@ class Alerts:
                     self.n.send(f"Host back online: {h['name']}", "", "ok")
             if not h["online"]:
                 continue
-            for label, pct, thr in (("RAM", mem_percent(h), self.ram), ("Storage", disk_percent(h), self.disk)):
+            limits = (("RAM", mem_percent(h), h.get("ram_limit") or self.ram),
+                      ("Storage", disk_percent(h), h.get("disk_limit") or self.disk))
+            for label, pct, thr in limits:
                 ck = f"{label}:{key}"
                 self.counts[ck] = self.counts.get(ck, 0) + 1 if pct >= thr else 0
                 if self.counts[ck] >= 3 and self._cool(ck):
