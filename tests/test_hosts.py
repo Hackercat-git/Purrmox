@@ -121,6 +121,18 @@ class HostTests(unittest.TestCase):
         self.assertEqual(hist.series("host", "gone", 1), [])
 
 
+    def test_young_series_is_not_collapsed(self):
+        import tempfile
+        import time
+
+        from purrmox.history import History
+        hist = History(path=os.path.join(tempfile.mkdtemp(), "h.db"))
+        now = int(time.time())
+        hist.conn.executemany("INSERT INTO samples VALUES (?,?,?,?,?)",
+                              [(now - 60 * i, "host", "pc", 10.0, 20.0) for i in range(10)])
+        self.assertGreaterEqual(len(hist.series("host", "pc", 24)), 8)
+
+
 class AgentTests(unittest.TestCase):
     """The agent is served over a real local socket and polled by the real HostPoller."""
 

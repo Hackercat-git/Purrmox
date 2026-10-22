@@ -58,10 +58,12 @@ class History:
         with self.lock:
             rows = self.conn.execute("SELECT ts, cpu, mem FROM samples WHERE kind=? AND name=? AND ts>=? ORDER BY ts",
                                      (kind, str(name), since)).fetchall()
-        bucket = hours * 3600 / points
+        # Start at the first sample so a young series is not squeezed into a single 15 minute bucket.
+        start = max(since, rows[0][0]) if rows else since
+        bucket = max(1, (now - start) / points)
         groups = {}
         for ts, cpu, mem in rows:
-            groups.setdefault(int((ts - since) / bucket), []).append((ts, cpu, mem))
+            groups.setdefault(int((ts - start) / bucket), []).append((ts, cpu, mem))
         out = []
         for key in sorted(groups):
             g = groups[key]
