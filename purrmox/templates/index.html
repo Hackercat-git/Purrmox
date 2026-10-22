@@ -46,6 +46,7 @@
   .tile .v small { font-size:13px; color:var(--muted); font-weight:500; }
   h2 { font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; margin:28px 0 12px; font-weight:600; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; }
+  .card.off { opacity:.7; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); }
   .card .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .name { font-weight:650; font-size:16px; display:flex; align-items:center; gap:9px; }
@@ -90,6 +91,7 @@
   .dgrid .val { font-size:14px; }
   .acts { display:flex; gap:8px; flex-wrap:wrap; }
   .tag { font-size:11px; padding:2px 8px; border-radius:6px; background:var(--card); border:1px solid var(--line); color:var(--muted); margin-right:4px; }
+  .tag.os { color:var(--accent); margin:0; }
   .tag.vm { color:#c8a2ff; } .tag.ct { color:#7cc4ff; }
   .ip { font-family:ui-monospace,Consolas,monospace; font-size:12.5px; cursor:copy; }
   .ip:hover { color:var(--accent); }
@@ -114,7 +116,7 @@
 <header>
   <div class="brand">
     <div class="logo">P</div>
-    <div><h1>Purrmox</h1><div class="sub">Proxmox cluster overview</div></div>
+    <div><h1>Purrmox</h1><div class="sub">Homelab overview</div></div>
   </div>
   <div class="right">
     <span class="pill"><span class="dot" id="conn"></span><span id="connText">Connecting...</span></span>
@@ -133,6 +135,8 @@
 
 <h2>Nodes</h2>
 <div id="nodes" class="grid"></div>
+
+<div id="hostwrap" style="display:none"><h2>Other machines</h2><div id="hosts" class="grid"></div></div>
 
 <h2>Services</h2>
 <div id="services" class="grid"></div>
@@ -202,8 +206,8 @@ async function loadHist(kind, name) {
 }
 async function refreshHist() {
   if (!DATA) return;
-  await Promise.all(DATA.nodes.map(n => loadHist("node", n.name)).concat([...expanded].map(id => loadHist("guest", id))));
-  renderNodes(DATA); renderGuests(DATA);
+  await Promise.all(DATA.nodes.map(n => loadHist("node", n.name)).concat((DATA.hosts || []).map(h => loadHist("host", h.id))).concat([...expanded].map(id => loadHist("guest", id))));
+  renderNodes(DATA); renderHosts(DATA); renderGuests(DATA);
 }
 
 function renderTiles(d) {
@@ -213,6 +217,7 @@ function renderTiles(d) {
   const tile = (k, v, s) => '<div class="tile"><div class="k">' + k + '</div><div class="v">' + v + (s ? ' <small>' + s + '</small>' : '') + '</div></div>';
   let html = tile("Nodes online", nOn, "/ " + d.nodes.length) + tile("Running", gOn, "/ " + d.guests.length) +
              tile("Avg. CPU", cpu + "%", "") + tile("Total RAM", gb(mu), "/ " + gb(mt) + " GB");
+  if (d.hosts && d.hosts.length) html += tile("Machines online", d.hosts.filter(h => h.online).length, "/ " + d.hosts.length);
   if (d.backups_available) {
     const old = d.guests.filter(g => !g.backup || (d.now - g.backup.last) / 3600 > d.backup_hours).length;
     html += tile("Outdated backups", '<span class="' + (old ? "warn-t" : "ok-t") + '">' + old + '</span>', "/ " + d.guests.length);
@@ -238,6 +243,30 @@ function renderNodes(d) {
       meter("Storage", gb(n.disk_used) + " / " + gb(n.disk_total) + " GB", pct(n.disk_used, n.disk_total)) +
       '<div class="spark">' + spark(HIST["node:" + n.name]) + '</div></div>';
   }).join("") || '<div class="empty">No nodes found.</div>';
+}
+
+function renderHosts(d) {
+  const hosts = d.hosts || [];
+  document.getElementById("hostwrap").style.display = hosts.length ? "block" : "none";
+  document.getElementById("hosts").innerHTML = hosts.map(h => {
+    const seen = h.seen ? new Date(h.seen * 1000).toLocaleTimeString() : null;
+    const info = [h.ip ? '<span class="port">' + esc(h.ip) + '</span>' : "", h.cores ? h.cores + " cores" : "",
+                  h.battery ? "battery " + h.battery.percent + "%" + (h.battery.plugged ? " (charging)" : "") : "",
+                  h.temp != null ? h.temp + " °C" : ""].filter(Boolean).join(" · ");
+    const disks = (h.disks && h.disks.length ? h.disks : []).map(x => meter("Disk " + esc(x.mount), gb(x.used) + " / " + gb(x.total) + " GB", pct(x.used, x.total))).join("") ||
+                  (h.disk_total ? meter("Storage", gb(h.disk_used) + " / " + gb(h.disk_total) + " GB", pct(h.disk_used, h.disk_total)) : "");
+    const body = h.mem_total || h.cpu ? meter("CPU", h.cpu + "%", Math.round(h.cpu)) +
+      meter("RAM", gb(h.mem_used) + " / " + gb(h.mem_total) + " GB", pct(h.mem_used, h.mem_total)) + disks +
+      '<div class="spark">' + spark(HIST["host:" + h.id]) + '</div>' : "";
+    const head = '<div class="top"><div class="name"><span class="dot ' + (h.online ? "ok" : "") + '"></span>' + esc(h.name) +
+      '</div><div class="up">' + (h.os ? '<span class="tag os">' + esc(h.os) + '</span> ' : "") + (h.online ? uptime(h.uptime) : "offline") + '</div></div>';
+    const card = '<div class="card' + (h.online ? "" : " off") + '">' + head +
+      (info ? '<div class="up" style="margin-bottom:6px">' + info + '</div>' : "") +
+      (h.note ? '<div class="up">' + esc(h.note) + '</div>' : "") +
+      (!h.online ? '<div class="bad-t" style="font-size:13px;margin:6px 0">' + esc(h.error || "No response") + (seen ? " (last seen " + seen + ")" : "") + '</div>' : "") +
+      body + '</div>';
+    return h.link ? '<a class="cardlink" target="_blank" rel="noopener" href="' + esc(h.link) + '">' + card + '</a>' : card;
+  }).join("");
 }
 
 function renderServices(d) {
@@ -344,7 +373,7 @@ function renderGuests(d) {
 
 function render() {
   if (!DATA) return;
-  renderTiles(DATA); renderBookmarks(DATA); renderNodes(DATA); renderServices(DATA); renderCerts(DATA); renderChips(DATA); renderGuests(DATA);
+  renderTiles(DATA); renderBookmarks(DATA); renderNodes(DATA); renderHosts(DATA); renderServices(DATA); renderCerts(DATA); renderChips(DATA); renderGuests(DATA);
 }
 
 async function load() {

@@ -14,6 +14,7 @@ from purrmox.config import DEFAULT_PATH, load_config
 from purrmox.discovery import Discovery
 from purrmox.exporter import to_markdown
 from purrmox.history import History
+from purrmox.hosts import HostPoller
 from purrmox.links import safe_url
 from purrmox.monitor import Monitor
 from purrmox.notifier import Discord, Telegram, MultiNotifier
@@ -48,7 +49,9 @@ def create_app(cfg, history_path="history.db"):
     telegram = Telegram(cfg.get("telegram"))
     notifier = MultiNotifier(discord, telegram)
     alerts = Alerts(notifier, cfg)
-    monitor = Monitor(client, discovery, checker, certs, history, alerts, poll_seconds=cfg.get("poll_seconds", 30))
+    hosts = HostPoller(cfg.get("hosts"), interval=cfg.get("poll_seconds", 30))
+    monitor = Monitor(client, discovery, checker, certs, history, alerts, poll_seconds=cfg.get("poll_seconds", 30),
+                      hosts=hosts)
 
     bookmarks = [{"label": b.get("label") or b.get("url"), "url": safe_url(b.get("url"))}
                  for b in (cfg.get("links") or []) if isinstance(b, dict) and safe_url(b.get("url"))]
@@ -76,6 +79,7 @@ def create_app(cfg, history_path="history.db"):
             b = backups.get(g["id"]) if backups is not None else None
             g["backup"] = {"last": b["last"], "size": b["size"]} if b else None
         data["backups_available"] = backups is not None
+        data["hosts"] = hosts.get()
         data["services"] = checker.get()
         data["certs"] = certs.get()
         data["links"] = bookmarks
@@ -103,7 +107,7 @@ def create_app(cfg, history_path="history.db"):
     def api_history():
         kind = request.args.get("kind", "node")
         name = request.args.get("name", "")
-        if kind not in ("node", "guest") or not re.fullmatch(r"[\w.-]{1,64}", name):
+        if kind not in ("node", "guest", "host") or not re.fullmatch(r"[\w.-]{1,64}", name):
             return jsonify({"error": "invalid parameters"}), 400
         try:
             hours = int(request.args.get("hours", 24))
@@ -155,6 +159,7 @@ def create_app(cfg, history_path="history.db"):
         """Start all background workers (discovery, checks, notifications, monitoring)."""
         discovery.start()
         checker.start()
+        hosts.start()
         certs.start()
         notifier.start()
         monitor.start()
@@ -163,7 +168,7 @@ def create_app(cfg, history_path="history.db"):
         if notifier.enabled and notifier.notify_start:
             notifier.send("Purrmox started", "Monitoring is active.", "info")
 
-    app.purrmox = SimpleNamespace(monitor=monitor, discovery=discovery, checker=checker, certs=certs,
+    app.purrmox = SimpleNamespace(monitor=monitor, hosts=hosts, discovery=discovery, checker=checker, certs=certs,
                                   history=history, notifier=notifier, alerts=alerts,
                                   build_status=build_status, start_background=start_background)
     return app

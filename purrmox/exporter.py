@@ -9,6 +9,11 @@ def to_markdown(data):
     for n in data["nodes"]:
         lines.append(f"| {n['name']} | {n.get('ip') or '-'} | {n.get('tailscale') or '-'} | {n['cores']} | "
                      f"{n['mem_total'] / 1073741824:.1f} |")
+    if data.get("hosts"):
+        lines += ["", "## Other machines", "", "| Name | OS | IP | Cores | RAM (GB) | Status |", "|---|---|---|---|---|---|"]
+        for h in data["hosts"]:
+            lines.append(f"| {h['name']} | {h.get('os') or '-'} | {h.get('ip') or '-'} | {h.get('cores') or '-'} | "
+                         f"{h.get('mem_total', 0) / 1073741824:.1f} | {'online' if h['online'] else 'offline'} |")
     lines += ["", "## Virtual machines and containers", "",
               "| ID | Name | Type | Node | IP | Ports | Tags | Status |", "|---|---|---|---|---|---|---|---|"]
     for g in data["guests"]:

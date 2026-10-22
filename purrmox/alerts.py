@@ -19,6 +19,7 @@ class Alerts:
         self.sent = {}
         self.counts = {}
         self.ready = False
+        self.hosts_ready = False
         self.started = time.time()
 
     def _cool(self, key, seconds=None):
@@ -44,6 +45,34 @@ class Alerts:
         self._services(services)
         if summary and time.time() - self.started > 120 and self._cool("daily", 86400):
             self._daily(summary, backups, certs)
+
+    def evaluate_hosts(self, hosts):
+        """Send notifications for agent hosts (Windows, macOS, Linux): offline, back online, RAM and storage."""
+        for h in hosts:
+            key = "host:" + h["id"]
+            fails = self.counts.get(key, 0)
+            fails = 0 if h["online"] else fails + 1
+            self.counts[key] = fails
+            down = self.state.get(key + ":down", False)
+            if fails >= 2 and not down:
+                self.state[key + ":down"] = True
+                if self.hosts_ready:
+                    self.n.send(f"Host offline: {h['name']}", h.get("error") or "No response from the agent.",
+                                "bad", ping=True)
+            elif h["online"] and down:
+                self.state[key + ":down"] = False
+                if self.hosts_ready:
+                    self.n.send(f"Host back online: {h['name']}", "", "ok")
+            if not h["online"]:
+                continue
+            for label, pct, thr in (("RAM", mem_percent(h), self.ram), ("Storage", disk_percent(h), self.disk)):
+                ck = f"{label}:{key}"
+                self.counts[ck] = self.counts.get(ck, 0) + 1 if pct >= thr else 0
+                if self.counts[ck] >= 3 and self._cool(ck):
+                    self.n.send(f"{label} almost full: {h['name']}", f"{pct:.0f}% in use (threshold {thr}%).",
+                                "warn", [("Host", h["name"]), (label, f"{pct:.0f}%")])
+        if hosts:
+            self.hosts_ready = True
 
     def _nodes(self, summary):
         for n in summary["nodes"]:

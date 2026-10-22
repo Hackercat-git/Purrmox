@@ -16,7 +16,11 @@ dependencies = [
     "waitress>=3.0",
 ]
 
+[project.optional-dependencies]
+agent = ["psutil>=5.9"]
+
 [project.scripts]
+purrmox-agent = "purrmox.agent:main"
 purrmox = "purrmox.app:main"
 purrmox-setup = "purrmox.setup:main"
 purrmox-hashpw = "purrmox.hashpw:main"

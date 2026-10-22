@@ -15,6 +15,7 @@ class History:
         self.retention = retention_days * 86400
         self.interval = interval
         self.last_record = 0
+        self.last_host_record = 0
         self.last_prune = 0
         with self.lock:
             self.conn.execute("CREATE TABLE IF NOT EXISTS samples "
@@ -36,6 +37,18 @@ class History:
                 self.last_prune = now
             self.conn.commit()
         self.last_record = now
+
+    def record_hosts(self, hosts):
+        """Store one sample per online agent host, at most once per interval."""
+        now = int(time.time())
+        if now - self.last_host_record < self.interval - 5:
+            return
+        rows = [(now, "host", h["id"], h["cpu"], mem_percent(h)) for h in hosts if h.get("online")]
+        if rows:
+            with self.lock:
+                self.conn.executemany("INSERT INTO samples VALUES (?,?,?,?,?)", rows)
+                self.conn.commit()
+        self.last_host_record = now
 
     def series(self, kind, name, hours=24, points=96):
         """Return averaged samples for the given entity, bucketed into at most ``points`` points."""

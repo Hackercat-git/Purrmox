@@ -7,10 +7,11 @@ from purrmox.proxmox import ProxmoxError, list_backups, summarize
 
 
 class Monitor:
-    def __init__(self, client, discovery, checker, certs, history, alerts, poll_seconds=30):
+    def __init__(self, client, discovery, checker, certs, history, alerts, poll_seconds=30, hosts=None):
         self.client, self.discovery, self.checker = client, discovery, checker
         self.certs, self.history, self.alerts = certs, history, alerts
         self.poll_seconds = poll_seconds
+        self.hosts = hosts
         self.summary = None
         self.error = None
         self.updated = None
@@ -47,6 +48,10 @@ class Monitor:
         with self._lock:
             self.summary, self.error, self.updated = summary, error, time.time()
         self.alerts.evaluate(summary, error, self.checker.get(), self.backups, self.certs.get())
+        if self.hosts:
+            hosts = self.hosts.get()
+            self.history.record_hosts(hosts)
+            self.alerts.evaluate_hosts(hosts)
 
     def get(self):
         """Return a deep copy of the latest snapshot."""

@@ -8,6 +8,8 @@ services, backups and certificates, with optional Discord alerts.
 
 - **Live overview** of every node, VM and LXC container: status, CPU, memory, storage, uptime and tags.
 - **Automatic discovery** of guest IP addresses and open ports, with clickable links to web interfaces.
+- **Every machine in one console**: Windows, macOS and Linux machines outside Proxmox report CPU, RAM, disks,
+  battery and uptime through a small agent, with the same history and alerts as your nodes.
 - **Service checks** over HTTP or TCP, with latency and clickable cards.
 - **History** of CPU and memory usage per node and guest (SQLite, configurable retention).
 - **Discord alerts** through a bot: stopped guests, offline nodes, unreachable services, high RAM or storage usage,
@@ -65,6 +67,40 @@ purrmox-update
 ```
 
 From the Proxmox host: `pct exec <CTID> -- purrmox-update`.
+
+## Monitoring Windows, macOS and other machines (agent)
+
+Proxmox only knows its own nodes and guests. To see every other machine in the same dashboard, run the small
+**Purrmox agent** on it. The agent serves `GET /metrics` (CPU, RAM, disks, uptime, battery, temperature where
+available) and protects it with a shared secret; Purrmox polls it every `poll_seconds` and adds the machine to the
+"Other machines" section, to the history graphs, to the Markdown/JSON export, and to Discord/Telegram alerts
+(offline, RAM and storage thresholds).
+
+**Windows** (elevated PowerShell; needs Python 3.9+; installs as a startup task running as SYSTEM):
+
+```powershell
+.\install\agent\install-windows.ps1 -AllowFrom 192.168.1.50   # IP of the machine that runs Purrmox
+```
+
+**macOS and Linux** (installs a launchd daemon or systemd service):
+
+```bash
+sudo ./install/agent/install-unix.sh
+```
+
+Each script prints a shared secret once. Add the machine to `config.yaml`, keeping the secret in an environment
+variable (for the container install: `/etc/purrmox/purrmox.env`):
+
+```yaml
+hosts:
+  - {name: "Milan PC", url: "http://192.168.1.60:9100", token_env: "AGENT_TOKEN_PC", note: "Windows desktop"}
+```
+
+Run the agent by hand instead with `pip install "purrmox[agent]"`, set `PURRMOX_AGENT_TOKEN` (at least 16
+characters) and start `purrmox-agent --port 9100`. Use `--uninstall` (unix) or `-Uninstall` (Windows) to remove it.
+
+The agent is read-only and has no commands, only metrics. Traffic is plain HTTP, so keep it on your LAN or
+Tailscale and restrict the firewall to the Purrmox server (the Windows script does this with `-AllowFrom`).
 
 ## Creating the API token manually
 
@@ -128,6 +164,8 @@ python -m unittest discover -s tests -v
 
 ## Security notes
 
+- Agents require a bearer token (compared in constant time), expose metrics only, and the Windows installer limits
+  the firewall rule to private networks and one allowed address.
 - Prefer the read-only `PVEAuditor` token. Power actions require a separate token, authentication, and are off by default.
 - Keep Purrmox behind your LAN or a VPN. Do not expose it directly to the internet.
 - The configuration file contains the API token secret and is created with owner-only permissions.

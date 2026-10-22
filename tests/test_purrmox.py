@@ -174,6 +174,7 @@ class AppTests(unittest.TestCase):
 
 
 class SetupTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "POSIX file modes do not apply on Windows")
     def test_written_config_is_private_and_loadable(self):
         import stat
         import tempfile

@@ -3,7 +3,7 @@ import sys
 
 import yaml
 
-from purrmox import auth
+from purrmox import auth, hosts
 
 DEFAULT_PATH = "config.yaml"
 
@@ -19,6 +19,9 @@ def load_config(path=DEFAULT_PATH):
     missing = [k for k in ("host", "token_id", "token_secret") if not px.get(k)]
     if missing:
         sys.exit("Missing keys under 'proxmox' in the configuration: " + ", ".join(missing))
+    problems = hosts.validate(cfg["hosts"]) if cfg.get("hosts") else []
+    if problems:
+        sys.exit("Invalid 'hosts' configuration:\n  " + "\n  ".join(problems))
     host = (cfg.get("listen") or {}).get("host", "127.0.0.1")
     if host not in auth.LOOPBACK and not auth.enabled(cfg) and not cfg.get("allow_insecure"):
         sys.exit("Purrmox is configured to listen on the network but 'auth' is not set. "

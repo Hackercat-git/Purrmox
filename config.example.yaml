@@ -17,6 +17,12 @@ listen:
 #   username: "admin"
 #   password_hash: "scrypt:..."
 
+# Other machines (Windows, macOS, Linux outside Proxmox). Each one runs the Purrmox agent (see README).
+# Use `token` or, better, `token_env` (name of an environment variable that holds the secret).
+# hosts:
+#   - {name: "Milan PC", url: "http://192.168.1.60:9100", token_env: "AGENT_TOKEN_PC", note: "Windows desktop"}
+#   - {name: "MacBook", url: "http://192.168.1.61:9100", token_env: "AGENT_TOKEN_MAC"}
+
 # Services: use `url` (HTTP) or `tcp` ("host:port"). `link` sets where the card links to.
 services:
   - name: "Example web server"
